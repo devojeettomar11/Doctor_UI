@@ -60,7 +60,7 @@ const AuthPage = () => {
       <div className="max-w-4xl w-full bg-white rounded-3xl shadow-xl overflow-hidden flex flex-col md:flex-row">
 
         {/* Left Side: Illustration / Branding Area */}
-        <div className="md:w-5/12 bg-gradient-to-br from-teal-trustworthy-main to-teal-trustworthy-darker p-10 flex flex-col justify-between text-white hidden md:flex">
+        <div className="md:w-5/12 bg-linear-to-br from-teal-trustworthy-main to-teal-trustworthy-darker p-10 flex flex-col justify-between text-white hidden md:flex">
           <div>
             <div className="flex items-center gap-2 mb-8">
               <ShieldCheck size={32} className="text-teal-trustworthy-lighter" />
