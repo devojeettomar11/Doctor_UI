@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { Mail, Lock, User, Phone, Briefcase, ShieldCheck, ArrowRight } from 'lucide-react';
 
+import { useAuth } from '../hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
+
 const InputField = ({ icon: Icon, type = 'text', placeholder, name, value, onChange }) => (
   <div className="relative mb-4">
     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
@@ -27,31 +30,40 @@ const AuthPage = () => {
     password: '',
     role: 'patient',
   });
+  const [status, setStatus] = useState({ type: '', message: '' });
+  
+  const { login, register, loading } = useAuth();
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setStatus({ type: '', message: '' });
+
     if (isLogin) {
-      console.log('Logging in with:', formData.email, formData.password);
-      // Simulate login logic
-    } else {
-      const newUser = {
-        id: crypto.randomUUID(),
-        name: formData.name,
+      const result = await login({
         email: formData.email,
-        phone: formData.phone,
-        password_hash: formData.password, // In real app, this should be hashed
-        role: formData.role,
-        is_verified: false,
-        is_active: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-      console.log('Registering user according to required schema:', newUser);
-      // Simulate registration logic
+        password: formData.password
+      });
+      
+      if (result.success) {
+        setStatus({ type: 'success', message: 'Logged in successfully!' });
+        setTimeout(() => navigate('/'), 1500);
+      } else {
+        setStatus({ type: 'error', message: result.message });
+      }
+    } else {
+      const result = await register(formData);
+      
+      if (result.success) {
+        setStatus({ type: 'success', message: 'Account created successfully!' });
+        setTimeout(() => navigate('/'), 1500);
+      } else {
+        setStatus({ type: 'error', message: result.message });
+      }
     }
   };
 
@@ -105,6 +117,14 @@ const AuthPage = () => {
             </p>
           </div>
 
+          {status.message && (
+            <div className={`mb-6 p-4 rounded-2xl text-sm font-medium ${
+              status.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-rose-50 text-rose-700 border border-rose-100'
+            }`}>
+              {status.message}
+            </div>
+          )}
+
           <form onSubmit={handleSubmit}>
             {!isLogin && (
               <InputField icon={User} name="name" placeholder="Full Name" value={formData.name} onChange={handleChange} />
@@ -143,10 +163,17 @@ const AuthPage = () => {
 
             <button
               type="submit"
-              className="w-full mt-6 bg-slate-900 text-white font-bold rounded-2xl py-4 flex items-center justify-center gap-2 hover:bg-slate-800 transition-colors shadow-lg shadow-slate-200"
+              disabled={loading}
+              className="w-full mt-6 bg-slate-900 text-white font-bold rounded-2xl py-4 flex items-center justify-center gap-2 hover:bg-slate-800 transition-colors shadow-lg shadow-slate-200 disabled:opacity-70 disabled:cursor-not-allowed"
             >
-              {isLogin ? 'Sign In' : 'Register Account'}
-              <ArrowRight size={20} />
+              {loading ? (
+                <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                <>
+                  {isLogin ? 'Sign In' : 'Register Account'}
+                  <ArrowRight size={20} />
+                </>
+              )}
             </button>
           </form>
 
