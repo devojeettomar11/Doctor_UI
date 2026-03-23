@@ -1,1 +1,1 @@
-﻿export * from './api/appointmentApi';
+﻿
