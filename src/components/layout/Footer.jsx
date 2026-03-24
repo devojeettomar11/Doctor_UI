@@ -42,6 +42,24 @@ const Footer = () => {
               </a>
             ))}
           </div>
+
+          <div className="mt-10">
+            <p className="text-white font-black text-sm mb-4 tracking-wider uppercase">Get the App</p>
+            <a 
+              href="https://play.google.com/store" 
+              target="_blank" 
+              rel="noreferrer" 
+              className="inline-flex items-center gap-3 bg-black text-white px-5 py-2.5 rounded-xl border border-white/10 hover:border-sky-500/50 hover:bg-slate-900 transition-all group"
+            >
+              <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+                <path d="M3,20.5V3.5C3,2.91 3.34,2.39 3.84,2.15L13.69,12L3.84,21.85C3.34,21.61 3,21.09 3,20.5M16.81,15.12L18.66,16.19C19.44,16.63 19.44,17.37 18.66,17.81L4.85,25.78L14.69,15.94L16.81,15.12M17.15,12L4.63,4.48L14.69,14.53L17.15,12M18.66,7.81C19.44,8.25 19.44,8.99 18.66,9.43L16.81,10.5L14.69,8.4L4.85,2.78L18.66,7.81Z" />
+              </svg>
+              <div>
+                <p className="text-[10px] font-bold text-slate-400 leading-none mb-1">GET IT ON</p>
+                <p className="text-sm font-black text-white leading-none">Google Play</p>
+              </div>
+            </a>
+          </div>
         </div>
 
         {/* Quick Links Column */}

@@ -1,27 +1,48 @@
-import React, { useMemo, useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import React, { useMemo, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import Sidebar from '../components/Sidebar';
+import useAuthStore from '../../auth/store/authStore';
+import { fetchMyStore, fetchOrders } from '../api/medicalStoreApi';
 
-const seedOrders = [
-  { id: 7, customer: 'Dipak Sahani', phone: '8080014894', type: 'Prescription', item: 'Prescription', status: 'Audited', bill: 130, payment: '-', date: '19/3/2026' },
-  { id: 6, customer: 'd', phone: '1234567889', type: 'Prescription', item: 'Prescription', status: 'Audited', bill: 60, payment: '-', date: '19/3/2026' },
-  { id: 5, customer: 'Test User', phone: '9999999999', type: 'Prescription', item: 'Prescription', status: 'Pending', bill: null, payment: '-', date: '19/3/2026' },
-  { id: 4, customer: 'd', phone: '1234567889', type: 'Name', item: 'Dolo 650', status: 'Pending', bill: null, payment: '-', date: '19/3/2026' },
-  { id: 3, customer: 'CURL_TEST', phone: '1122334455', type: 'Prescription', item: 'Prescription', status: 'Pending', bill: null, payment: '-', date: '19/3/2026' },
-  { id: 2, customer: 'Dipak', phone: '1234567889', type: 'Name', item: 'Dolo 650', status: 'Pending', bill: null, payment: '-', date: '19/3/2026' },
-];
+const seedOrders = [];
 
 const tabs = ['All', 'Pending', 'Audited', 'Confirmed', 'Cancelled'];
 
 function formatBill(value) {
   if (value === null || value === undefined) return '-';
-  return `Rs${value.toFixed(2)}`;
+  return `\u20B9${value.toFixed(2)}`;
 }
 
 export default function OrdersPage() {
+  const { user } = useAuthStore();
   const navigate = useNavigate();
   const [notice, setNotice] = useState('');
   const [activeTab, setActiveTab] = useState('All');
-  const [orders, setOrders] = useState(seedOrders);
+  const [orders, setOrders] = useState([]);
+  const [store, setStore] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadOrders = async () => {
+      if (user?.email) {
+        try {
+          const storeRes = await fetchMyStore(user.email);
+          if (storeRes.success && storeRes.data) {
+            setStore(storeRes.data);
+            const ordRes = await fetchOrders(storeRes.data.id, activeTab);
+            if (ordRes.success) {
+              setOrders(ordRes.data);
+            }
+          }
+        } catch (error) {
+          console.error('Error loading orders:', error);
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+    loadOrders();
+  }, [user, activeTab]);
 
   const visibleOrders = useMemo(() => {
     if (activeTab === 'All') return orders;
@@ -65,32 +86,7 @@ export default function OrdersPage() {
 
   return (
     <div className="dashboard-page inventory-theme">
-      <aside className="dashboard-sidebar">
-        <div className="brand-block">
-          <div className="brand-title">MedStore</div>
-          <div className="brand-subtitle">Admin Panel</div>
-        </div>
-
-        <nav className="dashboard-nav">
-          <NavLink className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} to="/store/dashboard">Dashboard</NavLink>
-          <NavLink className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} to="/store/inventory">
-            Inventory
-            <span className="pill-count">23</span>
-          </NavLink>
-          <NavLink className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} to="/store-setup">Store Setup</NavLink>
-          <NavLink className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} to="/store/orders">Orders</NavLink>
-          <NavLink className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} to="/store/taxes">Tax Settings</NavLink>
-        </nav>
-
-        <div className="sidebar-section">Quick Actions</div>
-        <div className="quick-links">
-          <button className="quick-link" type="button" onClick={() => navigate('/store/inventory')}>Search Medicines</button>
-          <button className="quick-link" type="button" onClick={() => navigate('/store/store-setup')}>Store Setup</button>
-          <button className="quick-link" type="button" onClick={() => setTemporaryNotice('Support request drafted successfully.')}>Help & Support</button>
-        </div>
-
-        <button className="help-card" type="button" onClick={() => navigate('/store')}>Switch Store</button>
-      </aside>
+      <Sidebar setNotice={setTemporaryNotice} />
 
       <main className="dashboard-main">
         {notice ? <div className="toast-msg">{notice}</div> : null}
@@ -98,8 +94,8 @@ export default function OrdersPage() {
         <header className="topbar">
           <input className="search-input" placeholder="Search order ID, customer, phone..." />
           <div className="topbar-user">
-            <span className="user-name">Admin User</span>
-            <span className="user-email">admin@medstore.com</span>
+            <span className="user-name">{user?.name || 'Admin User'}</span>
+            <span className="user-email">{user?.email || 'admin@medstore.com'}</span>
           </div>
         </header>
 
@@ -141,17 +137,17 @@ export default function OrdersPage() {
                 </tr>
               </thead>
               <tbody>
-                {visibleOrders.map((order) => (
+                 {visibleOrders.map((order) => (
                   <tr key={order.id}>
                     <td>#{order.id}</td>
-                    <td className="orders-customer-cell">{order.customer}</td>
-                    <td>{order.phone}</td>
+                    <td className="orders-customer-cell">{order.customerName || 'Anonymous'}</td>
+                    <td>{order.customerPhone || 'N/A'}</td>
                     <td><span className="order-type-pill">{order.type}</span></td>
-                    <td>{order.item}</td>
+                    <td>{order.itemsCount || 0} items</td>
                     <td><span className={`order-status-pill ${order.status.toLowerCase()}`}>{order.status}</span></td>
-                    <td>{formatBill(order.bill)}</td>
-                    <td>{order.payment}</td>
-                    <td>{order.date}</td>
+                    <td>{formatBill(Number(order.billAmount || 0))}</td>
+                    <td>{order.paymentMethod || 'Manual'}</td>
+                    <td>{new Date(order.orderDate || order.createdAt).toLocaleDateString()}</td>
                     <td>
                       {order.status === 'Pending' ? (
                         <button type="button" className="order-action-btn" onClick={() => onAudit(order.id)}>Audit</button>

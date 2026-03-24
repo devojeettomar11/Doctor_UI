@@ -32,6 +32,15 @@ import TaxSettingsPage from '../features/medicalStore/pages/taxSettings';
 import OrdersPage from '../features/medicalStore/pages/orders';
 import OrderAuditPage from '../features/medicalStore/pages/orderAudit';
 
+// Doctor Pages
+import DoctorLayout from '@/features/doctor/pages/DoctorLayout';
+import DoctorDashboardPage from '@/features/doctor/pages/DoctorDashboardPage';
+import AppointmentsPage from '@/features/doctor/pages/AppointmentsPage';
+import AvailabilityPage from '@/features/doctor/pages/AvailabilityPage';
+import PatientsPage from '@/features/doctor/pages/PatientsPage';
+import EarningsPage from '@/features/doctor/pages/EarningsPage';
+import OnboardingPage from '@/features/doctor/pages/OnboardingPage';
+
 const AppRoutes = () => {
   return (
     <Routes>
@@ -74,6 +83,19 @@ const AppRoutes = () => {
         <Route path="orders" element={<OrdersPage />} />
         <Route path="orders/:orderId/audit" element={<OrderAuditPage />} />
         <Route path="taxes" element={<TaxSettingsPage />} />
+      </Route>
+
+      {/* Doctor Routes (Scoped) */}
+      <Route path="/doctor" element={<ProtectedRoute />}>
+        <Route element={<DoctorLayout />}>
+          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard" element={<DoctorDashboardPage />} />
+          <Route path="appointments" element={<AppointmentsPage />} />
+          <Route path="availability" element={<AvailabilityPage />} />
+          <Route path="patients" element={<PatientsPage />} />
+          <Route path="earnings" element={<EarningsPage />} />
+          <Route path="onboarding" element={<OnboardingPage />} />
+        </Route>
       </Route>
 
       {/* Fallback */}

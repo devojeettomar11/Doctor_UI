@@ -1,16 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import Sidebar from '../components/Sidebar';
+import useAuthStore from '../../auth/store/authStore';
+import { fetchMyStore, fetchInventory, addMedicine as apiAddMedicine, updateMedicine as apiUpdateMedicine, deleteMedicine as apiDeleteMedicine } from '../api/medicalStoreApi';
 
-const initialInventory = [
-  { id: 'm1', name: 'Amoxicillin 250mg', category: 'Capsules', batch: 'BT045', manufacturer: 'MediLife', expiry: '2025-08-15', price: 12.5, stock: 200 },
-  { id: 'm2', name: 'Aspirin 75mg', category: 'Tablets', batch: 'BT102', manufacturer: 'PharmaCo', expiry: '2025-11-10', price: 4.25, stock: 35 },
-  { id: 'm3', name: 'Cetirizine 10mg', category: 'Tablets', batch: 'CT890', manufacturer: 'AllerCare', expiry: '2026-02-14', price: 6.75, stock: 0 },
-  { id: 'm4', name: 'Ibuprofen 400mg', category: 'Tablets', batch: 'BT089', manufacturer: 'HealthPlus', expiry: '2026-03-20', price: 8.75, stock: 150 },
-  { id: 'm5', name: 'Metformin 500mg', category: 'Tablets', batch: 'BT067', manufacturer: 'MediLife', expiry: '2026-04-30', price: 15.0, stock: 180 },
-  { id: 'm6', name: 'Paracetamol 500mg', category: 'Tablets', batch: 'BT451', manufacturer: 'HealWell', expiry: '2026-01-25', price: 5.5, stock: 220 },
-  { id: 'm7', name: 'Omeprazole 20mg', category: 'Capsules', batch: 'OM328', manufacturer: 'GastroCure', expiry: '2025-09-05', price: 9.95, stock: 18 },
-  { id: 'm8', name: 'Vitamin D3 60K', category: 'Supplements', batch: 'VD732', manufacturer: 'NutriLab', expiry: '2027-01-09', price: 14.5, stock: 95 },
-];
+const initialInventory = [];
 
 const defaultForm = {
   name: '',
@@ -59,7 +53,10 @@ export default function InventoryPage() {
   const searchRef = useRef(null);
   const fileInputRef = useRef(null);
 
+  const { user } = useAuthStore();
   const [inventory, setInventory] = useState(initialInventory);
+  const [store, setStore] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('view');
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('All Categories');
@@ -72,6 +69,28 @@ export default function InventoryPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [formData, setFormData] = useState(defaultForm);
   const [notice, setNotice] = useState('');
+
+  useEffect(() => {
+    const loadInventory = async () => {
+      if (user?.email) {
+        try {
+          const storeRes = await fetchMyStore(user.email);
+          if (storeRes.success && storeRes.data) {
+            setStore(storeRes.data);
+            const invRes = await fetchInventory(storeRes.data.id);
+            if (invRes.success) {
+              setInventory(invRes.data);
+            }
+          }
+        } catch (error) {
+          console.error('Error loading inventory:', error);
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+    loadInventory();
+  }, [user]);
 
   const categoryOptions = useMemo(() => {
     const options = new Set(inventory.map((item) => item.category));
@@ -151,32 +170,45 @@ export default function InventoryPage() {
     setSelectedIds((prev) => (prev.includes(id) ? prev.filter((itemId) => itemId !== id) : [...prev, id]));
   };
 
-  const onAddMedicine = (event) => {
+  const onAddMedicine = async (event) => {
     event.preventDefault();
     if (!formData.name.trim() || !formData.batch.trim() || !formData.manufacturer.trim() || !formData.expiry) {
       setNotice('Please fill all required fields.');
       return;
     }
 
+    if (!store?.id) {
+        setNotice('Store information not found. Cannot add medicine.');
+        return;
+    }
+
     const price = Number(formData.price || 0);
     const stock = Number(formData.stock || 0);
 
     const newItem = {
-      id: `m${Date.now()}`,
       name: formData.name.trim(),
       category: formData.category,
-      batch: formData.batch.trim().toUpperCase(),
+      batchNumber: formData.batch.trim().toUpperCase(),
       manufacturer: formData.manufacturer.trim(),
-      expiry: formData.expiry,
+      expiryDate: formData.expiry,
       price,
-      stock,
+      stockCount: stock,
+      medicalStoreId: store.id
     };
 
-    setInventory((prev) => [newItem, ...prev]);
-    setShowAddModal(false);
-    setFormData(defaultForm);
-    setActiveTab('view');
-    setNotice('Medicine added successfully.');
+    try {
+        const response = await apiAddMedicine(newItem);
+        if (response.success) {
+            setInventory((prev) => [response.data, ...prev]);
+            setShowAddModal(false);
+            setFormData(defaultForm);
+            setActiveTab('view');
+            setNotice('Medicine added successfully.');
+        }
+    } catch (error) {
+        setNotice('Error adding medicine. Please try again.');
+        console.error('Add error:', error);
+    }
   };
 
   const onBulkUploadClick = () => {
@@ -226,9 +258,9 @@ export default function InventoryPage() {
     setNotice('Inventory exported successfully.');
   };
 
-  const onRowAction = (action, item) => {
+  const onRowAction = async (action, item) => {
     if (action === 'edit') {
-      const updatedStockValue = window.prompt(`Update stock for ${item.name}`, String(item.stock));
+      const updatedStockValue = window.prompt(`Update stock for ${item.name}`, String(item.stockCount || item.stock));
       if (updatedStockValue == null) return;
       const updatedStock = Number(updatedStockValue);
       if (Number.isNaN(updatedStock)) {
@@ -236,8 +268,16 @@ export default function InventoryPage() {
         return;
       }
 
-      setInventory((prev) => prev.map((row) => (row.id === item.id ? { ...row, stock: updatedStock } : row)));
-      setNotice('Stock updated.');
+      try {
+          const response = await apiUpdateMedicine(item.id, { stockCount: updatedStock });
+          if (response.success) {
+              setInventory((prev) => prev.map((row) => (row.id === item.id ? response.data : row)));
+              setNotice('Stock updated.');
+          }
+      } catch (error) {
+          setNotice('Error updating stock.');
+          console.error('Update error:', error);
+      }
       return;
     }
 
@@ -245,48 +285,23 @@ export default function InventoryPage() {
       const confirmed = window.confirm(`Delete ${item.name}?`);
       if (!confirmed) return;
 
-      setInventory((prev) => prev.filter((row) => row.id !== item.id));
-      setSelectedIds((prev) => prev.filter((id) => id !== item.id));
-      setNotice('Item deleted.');
+      try {
+          const response = await apiDeleteMedicine(item.id);
+          if (response.success) {
+              setInventory((prev) => prev.filter((row) => row.id !== item.id));
+              setSelectedIds((prev) => prev.filter((id) => id !== item.id));
+              setNotice('Item deleted.');
+          }
+      } catch (error) {
+          setNotice('Error deleting item.');
+          console.error('Delete error:', error);
+      }
     }
   };
 
   return (
     <div className="dashboard-page inventory-theme">
-      <aside className="dashboard-sidebar">
-        <div className="brand-block">
-          <div className="brand-title">MedStore</div>
-          <div className="brand-subtitle">Admin Panel</div>
-        </div>
-
-        <nav className="dashboard-nav">
-          <NavLink className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} to="/store/dashboard">
-            Dashboard
-          </NavLink>
-          <NavLink className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} to="/store/inventory">
-            Inventory
-            <span className="pill-count">23</span>
-          </NavLink>
-          <NavLink className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} to="/store/store-setup">
-            Store Setup
-          </NavLink>
-          <NavLink className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} to="/store/orders">
-            Orders
-          </NavLink>
-          <NavLink className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} to="/store/taxes">
-            Tax Settings
-          </NavLink>
-        </nav>
-
-        <div className="sidebar-section">Quick Actions</div>
-        <div className="quick-links">
-          <button className="quick-link" type="button" onClick={() => searchRef.current?.focus()}>Search Medicines</button>
-          <button className="quick-link" type="button" onClick={() => navigate('/store/store-setup')}>Settings</button>
-          <button className="quick-link" type="button" onClick={() => setNotice('Support team has been notified.')}>Help & Support</button>
-        </div>
-
-        <button className="help-card" type="button" onClick={() => navigate('/store')}>Switch Store</button>
-      </aside>
+      <Sidebar onSearchClick={() => searchRef.current?.focus()} setNotice={setNotice} />
 
       <main className="dashboard-main">
         {notice ? <div className="toast-msg">{notice}</div> : null}
@@ -303,8 +318,8 @@ export default function InventoryPage() {
             placeholder="Search by name, batch, or manufacturer..."
           />
           <div className="topbar-user">
-            <span className="user-name">Admin User</span>
-            <span className="user-email">admin@medstore.com</span>
+            <span className="user-name">{user?.name || 'Admin User'}</span>
+            <span className="user-email">{user?.email || 'admin@medstore.com'}</span>
           </div>
         </header>
 
@@ -437,9 +452,9 @@ export default function InventoryPage() {
                       <td><span className="mini-tag">{item.category}</span></td>
                       <td>{item.batch}</td>
                       <td>{item.manufacturer}</td>
-                      <td>{formatDate(item.expiry)}</td>
-                      <td>${item.price.toFixed(2)}</td>
-                      <td>{item.stock} units</td>
+                      <td>{formatDate(item.expiryDate || item.expiry)}</td>
+                      <td>₹{Number(item.price || 0).toFixed(2)}</td>
+                      <td>{item.stockCount || item.stock} units</td>
                       <td><span className={statusClass(itemStatus)}>{itemStatus}</span></td>
                       <td>
                         <div className="row-actions">

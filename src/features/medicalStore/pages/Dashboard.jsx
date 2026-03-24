@@ -1,75 +1,102 @@
-import React, { useMemo, useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
 import {
   Bell,
   Calendar,
   Download,
   Eye,
-  Grid2X2,
-  LifeBuoy,
-  Package,
   Search,
-  Settings,
   AlertTriangle,
   ShoppingCart,
   ShieldAlert,
-  ShoppingBag,
   TrendingUp,
   User,
+  Package,
   Wallet,
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import Sidebar from '../components/Sidebar';
+import useAuthStore from '../../auth/store/authStore';
+import { fetchMyStore, fetchDashboardStats } from '../api/medicalStoreApi';
+import { useEffect } from 'react';
+import { useState, useMemo } from 'react';
 
 const stats = [
-  { title: 'Total Medicines', value: '1,248', trend: '+12.5%', note: '+156 this month', icon: Package, iconTone: 'sky' },
-  { title: 'Low Stock', value: '23', trend: '-5.2%', note: 'Needs restocking', icon: ShieldAlert, iconTone: 'sand' },
-  { title: 'Expiring Soon', value: '15', trend: '+3.1%', note: 'Within 30 days', icon: Calendar, iconTone: 'rose' },
-  { title: 'Monthly Revenue', value: '$45,320', trend: '+18.2%', note: 'vs $38,400 last month', icon: Wallet, iconTone: 'mint' },
+  { title: 'Total Medicines', value: '0', trend: '0%', note: 'No data this month', icon: Package, iconTone: 'sky' },
+  { title: 'Low Stock', value: '0', trend: '0%', note: 'No data', icon: ShieldAlert, iconTone: 'sand' },
+  { title: 'Expiring Soon', value: '0', trend: '0%', note: 'No data', icon: Calendar, iconTone: 'rose' },
+  { title: 'Monthly Revenue', value: '₹0', trend: '0%', note: 'vs ₹0 last month', icon: Wallet, iconTone: 'mint' },
 ];
 
-const categories = [
-  { name: 'Tablets', value: 485 },
-  { name: 'Capsules', value: 312 },
-  { name: 'Syrups', value: 198 },
-  { name: 'Injections', value: 143 },
-  { name: 'Others', value: 110 },
-];
+const categories = [];
 
-const topSelling = [
-  { rank: 1, name: 'Paracetamol 500mg', sold: 487, amount: '$2918', trend: '+12%' },
-  { rank: 2, name: 'Amoxicillin 250mg', sold: 356, amount: '$4450', trend: '+8%' },
-  { rank: 3, name: 'Vitamin D3 1000IU', sold: 298, amount: '$5660', trend: '+24%' },
-  { rank: 4, name: 'Metformin 500mg', sold: 267, amount: '$4005', trend: '+15%' },
-  { rank: 5, name: 'Ibuprofen 400mg', sold: 234, amount: '$2048', trend: '-3%' },
-];
+const topSelling = [];
 
-const activityFeed = [
-  { name: 'Paracetamol 500mg', batch: 'BT001', action: 'Added', user: 'John Doe', time: '2 hours ago', tone: 'info' },
-  { name: 'Amoxicillin 250mg', batch: 'BT045', action: 'Updated', user: 'Sarah Smith', time: '4 hours ago', tone: 'info' },
-  { name: 'Ibuprofen 400mg', batch: 'BT089', action: 'Low Stock Alert', user: 'System', time: '5 hours ago', tone: 'warn' },
-  { name: 'Aspirin 75mg', batch: 'BT102', action: 'Added', user: 'Mike Johnson', time: '1 day ago', tone: 'info' },
-  { name: 'Metformin 500mg', batch: 'BT067', action: 'Expiring Soon', user: 'System', time: '1 day ago', tone: 'warn' },
-];
+const activityFeed = [];
 
-const lowStockItems = [
-  { name: 'Vitamin D3', batch: 'VT456', severity: 'critical', current: 12, minStock: 50 },
-  { name: 'Calcium Tablets', batch: 'CA789', severity: 'critical', current: 8, minStock: 30 },
-  { name: 'Iron Supplements', batch: 'IR234', severity: 'high', current: 15, minStock: 40 },
-  { name: 'Multivitamin', batch: 'MV901', severity: 'medium', current: 20, minStock: 60 },
-];
+const lowStockItems = [];
 
 const revenueData = [
-  { month: 'Jan', revenue: 32500 },
-  { month: 'Feb', revenue: 35800 },
-  { month: 'Mar', revenue: 37900 },
-  { month: 'Apr', revenue: 39200 },
-  { month: 'May', revenue: 42300 },
-  { month: 'Jun', revenue: 45320 },
+  { month: 'Jan', revenue: 0 },
+  { month: 'Feb', revenue: 0 },
+  { month: 'Mar', revenue: 0 },
+  { month: 'Apr', revenue: 0 },
+  { month: 'May', revenue: 0 },
+  { month: 'Jun', revenue: 0 },
 ];
 
 export default function Dashboard() {
+  const { user } = useAuthStore();
   const [activeMonthIndex, setActiveMonthIndex] = useState(1);
   const [notice, setNotice] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [store, setStore] = useState(null);
+  const [dashboardData, setDashboardData] = useState({
+    stats: [
+      { title: 'Total Medicines', value: '0', trend: '0%', note: 'No data this month', icon: Package, iconTone: 'sky' },
+      { title: 'Low Stock', value: '0', trend: '0%', note: 'No data', icon: ShieldAlert, iconTone: 'sand' },
+      { title: 'Expiring Soon', value: '0', trend: '0%', note: 'No data', icon: Calendar, iconTone: 'rose' },
+      { title: 'Monthly Revenue', value: '₹0', trend: '0%', note: 'vs ₹0 last month', icon: Wallet, iconTone: 'mint' },
+    ],
+    revenueData: [
+      { month: 'Jan', revenue: 0 },
+      { month: 'Feb', revenue: 0 },
+      { month: 'Mar', revenue: 0 },
+      { month: 'Apr', revenue: 0 },
+      { month: 'May', revenue: 0 },
+      { month: 'Jun', revenue: 0 },
+    ]
+  });
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const loadDashboardData = async () => {
+      if (user?.email) {
+        try {
+          const storeRes = await fetchMyStore(user.email);
+          if (storeRes.success && storeRes.data) {
+            setStore(storeRes.data);
+            const statsRes = await fetchDashboardStats(storeRes.data.id);
+            if (statsRes.success) {
+              const s = statsRes.data;
+              setDashboardData({
+                stats: [
+                  { title: 'Total Medicines', value: String(s.totalMedicines || 0), trend: '0%', note: 'Active inventory', icon: Package, iconTone: 'sky' },
+                  { title: 'Low Stock', value: String(s.lowStockCount || 0), trend: '0%', note: 'Needs attention', icon: ShieldAlert, iconTone: 'sand' },
+                  { title: 'Expiring Soon', value: String(s.expiringSoonCount || 0), trend: '0%', note: 'Check batches', icon: Calendar, iconTone: 'rose' },
+                  { title: 'Monthly Revenue', value: `₹${(s.monthlyRevenue || 0).toLocaleString()}`, trend: '0%', note: 'Current month', icon: Wallet, iconTone: 'mint' },
+                ],
+                revenueData: s.revenueTrend || dashboardData.revenueData
+              });
+            }
+          }
+        } catch (error) {
+          console.error('Error loading dashboard:', error);
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+    loadDashboardData();
+  }, [user]);
 
   const setTemporaryNotice = (message) => {
     setNotice(message);
@@ -90,8 +117,8 @@ export default function Dashboard() {
     const plotWidth = width - padLeft - padRight;
     const plotHeight = height - padTop - padBottom;
 
-    const points = revenueData.map((item, index) => {
-      const x = padLeft + (index / (revenueData.length - 1)) * plotWidth;
+    const points = dashboardData.revenueData.map((item, index) => {
+      const x = padLeft + (index / (dashboardData.revenueData.length - 1)) * plotWidth;
       const y = padTop + (1 - (item.revenue - yMin) / (yMax - yMin)) * plotHeight;
       return { ...item, x, y };
     });
@@ -111,7 +138,7 @@ export default function Dashboard() {
       linePath,
       areaPath,
     };
-  }, []);
+  }, [dashboardData.revenueData]);
 
   const activePoint = activeMonthIndex === null ? null : chart.points[activeMonthIndex];
 
@@ -148,37 +175,7 @@ export default function Dashboard() {
 
   return (
     <div className="dashboard-page">
-      <aside className="dashboard-sidebar">
-        <div className="brand-block">
-          <div className="brand-row">
-            <span className="brand-logo"><ShoppingBag size={20} /></span>
-            <div>
-              <div className="brand-title">MedStore</div>
-              <div className="brand-subtitle">Admin Panel</div>
-            </div>
-          </div>
-        </div>
-
-        <nav className="dashboard-nav">
-          <NavLink className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} to="/store/dashboard"><span className="nav-label"><Grid2X2 size={18} />Dashboard</span></NavLink>
-          <NavLink className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} to="/store/inventory">
-            <span className="nav-label"><Package size={18} />Inventory</span>
-            <span className="pill-count">23</span>
-          </NavLink>
-          <NavLink className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} to="/store/store-setup"><span className="nav-label"><Settings size={18} />Store Setup</span></NavLink>
-          <NavLink className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} to="/store/orders"><span className="nav-label"><ShoppingCart size={18} />Orders</span></NavLink>
-          <NavLink className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} to="/store/taxes"><span className="nav-label"><Wallet size={18} />Tax Settings</span></NavLink>
-        </nav>
-
-        <div className="sidebar-section">Quick Actions</div>
-        <div className="quick-links">
-          <button className="quick-link" type="button" onClick={() => navigate('/store/inventory')}><Search className="quick-link-icon" size={16} />Search Medicines</button>
-          <button className="quick-link" type="button" onClick={() => navigate('/store/store-setup')}><Settings className="quick-link-icon" size={16} />Settings</button>
-          <button className="quick-link" type="button" onClick={() => setTemporaryNotice('Support ticket drafted from dashboard.')}><LifeBuoy className="quick-link-icon" size={16} />Help & Support</button>
-        </div>
-
-        <button className="help-card" type="button" onClick={() => navigate('/store')}>Switch Store</button>
-      </aside>
+      <Sidebar setNotice={setTemporaryNotice} />
 
       <main className="dashboard-main">
         {notice ? <div className="toast-msg">{notice}</div> : null}
@@ -196,8 +193,8 @@ export default function Dashboard() {
             <div className="topbar-user">
               <span className="user-avatar"><User size={22} /></span>
               <div>
-                <span className="user-name">Admin User</span>
-                <span className="user-email">admin@medstore.com</span>
+                <span className="user-name">{user?.name || 'Admin User'}</span>
+                <span className="user-email">{user?.email || 'admin@medstore.com'}</span>
               </div>
             </div>
           </div>
@@ -215,7 +212,7 @@ export default function Dashboard() {
         </section>
 
         <section className="stats-grid">
-          {stats.map((item) => (
+          {dashboardData.stats.map((item) => (
             <article key={item.title} className="stat-card">
               <div>
                 <div className="stat-title">{item.title}</div>

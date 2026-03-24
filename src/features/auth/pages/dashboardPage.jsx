@@ -6,7 +6,11 @@ const DashboardPage = () => {
   const { user } = useAuthStore();
 
   if (user?.role === 'store_admin') {
-    return <Navigate to="/store" replace />;
+    return <Navigate to="/store/dashboard" replace />;
+  }
+
+  if (user?.role === 'doctor') {
+    return <Navigate to="/doctor/dashboard" replace />;
   }
 
   return (

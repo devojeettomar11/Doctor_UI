@@ -1,6 +1,6 @@
-import React, { useMemo, useState } from 'react';
-import { NavLink, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Check, Plus, Trash2 } from 'lucide-react';
+import Sidebar from '../components/Sidebar';
+import { auditOrder } from '../api/medicalStoreApi';
 
 function defaultOrder(orderId) {
   return {
@@ -53,38 +53,37 @@ export default function OrderAuditPage() {
     setItems((prev) => (prev.length === 1 ? prev : prev.filter((item) => item.id !== id)));
   };
 
-  const onConfirmBill = () => {
-    setTemporaryNotice('Bill confirmed and sent to customer.');
+  const onConfirmBill = async () => {
+    if (items.some(item => !item.name.trim() || !item.price || !item.qty)) {
+      setTemporaryNotice('Please fill all item details.');
+      return;
+    }
+
+    try {
+      const auditData = {
+        status: 'Audited',
+        billAmount: finalTotal,
+        items: items.map(item => ({
+          name: item.name,
+          quantity: Number(item.qty),
+          price: Number(item.price)
+        }))
+      };
+
+      const response = await auditOrder(order.id, auditData);
+      if (response.success) {
+        setTemporaryNotice('Bill confirmed and sent to customer.');
+        setTimeout(() => navigate('/store/orders'), 1500);
+      }
+    } catch (error) {
+      setTemporaryNotice('Error confirming bill. Please try again.');
+      console.error('Audit error:', error);
+    }
   };
 
   return (
     <div className="dashboard-page inventory-theme">
-      <aside className="dashboard-sidebar">
-        <div className="brand-block">
-          <div className="brand-title">MedStore</div>
-          <div className="brand-subtitle">Admin Panel</div>
-        </div>
-
-        <nav className="dashboard-nav">
-          <NavLink className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} to="/store/dashboard">Dashboard</NavLink>
-          <NavLink className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} to="/store/inventory">
-            Inventory
-            <span className="pill-count">23</span>
-          </NavLink>
-          <NavLink className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} to="/store-setup">Store Setup</NavLink>
-          <NavLink className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} to="/store/orders">Orders</NavLink>
-          <NavLink className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} to="/store/taxes">Tax Settings</NavLink>
-        </nav>
-
-        <div className="sidebar-section">Quick Actions</div>
-        <div className="quick-links">
-          <button className="quick-link" type="button" onClick={() => navigate('/store/inventory')}>Search Medicines</button>
-          <button className="quick-link" type="button" onClick={() => navigate('/store/orders')}>All Orders</button>
-          <button className="quick-link" type="button" onClick={() => setTemporaryNotice('Support request drafted successfully.')}>Help & Support</button>
-        </div>
-
-        <button className="help-card" type="button" onClick={() => navigate('/store')}>Switch Store</button>
-      </aside>
+      <Sidebar setNotice={setTemporaryNotice} />
 
       <main className="dashboard-main">
         {notice ? <div className="toast-msg">{notice}</div> : null}
@@ -154,10 +153,10 @@ export default function OrderAuditPage() {
             <button type="button" className="audit-add-item-btn" onClick={onAddItem}><Plus size={16} />Add Item</button>
 
             <div className="audit-summary">
-              <div><span>Medicines Subtotal</span><strong>Rs{subtotal.toFixed(2)}</strong></div>
-              <div><span>service tax</span><strong>+ Rs{serviceTax.toFixed(2)}</strong></div>
-              <div><span>erty (0%)</span><strong>+ Rs{extraTax.toFixed(2)}</strong></div>
-              <div className="audit-total-row"><span>Final Bill Amount</span><strong>Rs{finalTotal.toFixed(2)}</strong></div>
+              <div><span>Medicines Subtotal</span><strong>₹{subtotal.toFixed(2)}</strong></div>
+              <div><span>service tax</span><strong>+ ₹{serviceTax.toFixed(2)}</strong></div>
+              <div><span>erty (0%)</span><strong>+ ₹{extraTax.toFixed(2)}</strong></div>
+              <div className="audit-total-row"><span>Final Bill Amount</span><strong>₹{finalTotal.toFixed(2)}</strong></div>
             </div>
 
             <label className="audit-override-label" htmlFor="overrideTotal">Override Total (optional)</label>
@@ -166,7 +165,7 @@ export default function OrderAuditPage() {
               className="audit-override-input"
               value={overrideTotal}
               onChange={(event) => setOverrideTotal(event.target.value.replace(/[^\d.]/g, ''))}
-              placeholder="or leave blank to use Rs0.00"
+              placeholder="or leave blank to use ₹0.00"
             />
 
             <button type="button" className="audit-confirm-btn" onClick={onConfirmBill}><Check size={18} />Confirm & Send Bill to Customer</button>

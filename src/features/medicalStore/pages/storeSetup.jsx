@@ -1,19 +1,30 @@
-import React, { useMemo, useRef, useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import React, { useMemo, useRef, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { CheckCircle2, MapPin, ShieldCheck, Upload } from 'lucide-react';
+import Sidebar from '../components/Sidebar';
+import useAuthStore from '../../auth/store/authStore';
+import { fetchMyStore, setupStore } from '../api/medicalStoreApi';
 
 export default function StoreSetupPage() {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
 
+  const { user } = useAuthStore();
+  const [isSetupCompleted, setIsSetupCompleted] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [activeStep, setActiveStep] = useState(1);
+  const [notice, setNotice] = useState('');
   const [uploadedFile, setUploadedFile] = useState(null);
+
   const [locationForm, setLocationForm] = useState({
     storeName: '',
     ownerName: '',
     city: '',
     address: '',
     pinCode: '',
+    location: null, // { type: 'Point', coordinates: [lng, lat] }
   });
+
   const [adminForm, setAdminForm] = useState({
     adminEmail: '',
     phone: '',
@@ -21,15 +32,64 @@ export default function StoreSetupPage() {
     otpSent: false,
     verified: false,
   });
+
   const [storeForm, setStoreForm] = useState({
     openTime: '09:00',
     closeTime: '21:00',
     acceptsOnlineOrders: true,
   });
-  const [isSetupCompleted, setIsSetupCompleted] = useState(false);
 
-  const [activeStep, setActiveStep] = useState(1);
-  const [notice, setNotice] = useState('');
+  useEffect(() => {
+    const loadStore = async () => {
+      if (user?.email) {
+        try {
+          const response = await fetchMyStore(user.email);
+          if (response.success && response.data) {
+            const store = response.data;
+            setLocationForm({
+              storeName: store.name || '',
+              ownerName: store.ownerName || '',
+              city: store.city || '',
+              address: store.address || '',
+              pinCode: store.pinCode || '',
+              location: store.location || null,
+            });
+            setAdminForm((prev) => ({
+              ...prev,
+              adminEmail: store.adminEmail || user.email,
+              phone: store.contactNumber || '',
+              verified: store.isVerified || false,
+            }));
+            setStoreForm({
+              openTime: store.openTime || '09:00',
+              closeTime: store.closeTime || '21:00',
+              acceptsOnlineOrders: store.acceptsOnlineOrders !== undefined ? store.acceptsOnlineOrders : true,
+            });
+            if (store.status === 'active') {
+              setIsSetupCompleted(true);
+              setActiveStep(4);
+            } else if (store.isVerified) {
+              setActiveStep(4);
+            } else if (store.name) {
+              setActiveStep(3);
+            }
+          } else {
+             // If no store found, pre-fill from user info
+             setAdminForm(prev => ({ ...prev, adminEmail: user.email }));
+          }
+        } catch (error) {
+          console.error('Error fetching store:', error);
+          setAdminForm(prev => ({ ...prev, adminEmail: user.email }));
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        setLoading(false);
+      }
+    };
+    loadStore();
+  }, [user]);
+
 
   const steps = useMemo(
     () => [
@@ -78,6 +138,31 @@ export default function StoreSetupPage() {
     setTemporaryNotice('License uploaded successfully.');
   };
 
+  const onDetectLocation = () => {
+    if (!navigator.geolocation) {
+      setTemporaryNotice('Geolocation is not supported by your browser.');
+      return;
+    }
+
+    setTemporaryNotice('Detecting location...');
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { longitude, latitude } = position.coords;
+        setLocationForm((prev) => ({
+          ...prev,
+          location: {
+            type: 'Point',
+            coordinates: [longitude, latitude],
+          },
+        }));
+        setTemporaryNotice(`Location detected: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+      },
+      (error) => {
+        setTemporaryNotice('Unable to retrieve location.');
+        console.error('Geolocation error:', error);
+      }
+    );
+  };
   const onContinueFromUpload = () => {
     if (!uploadedFile) {
       setTemporaryNotice('Please upload your store license first.');
@@ -88,15 +173,35 @@ export default function StoreSetupPage() {
     setTemporaryNotice('Step 1 completed. Continue with store location.');
   };
 
-  const onSaveLocation = () => {
+  const onSaveLocation = async () => {
     const { storeName, ownerName, city, address, pinCode } = locationForm;
     if (!storeName || !ownerName || !city || !address || !pinCode) {
       setTemporaryNotice('Please fill all location details.');
       return;
     }
 
-    setActiveStep(3);
-    setTemporaryNotice('Location saved. Proceed to admin verification.');
+    try {
+      const payload = {
+        name: storeName,
+        address: address,
+        city: city,
+        pinCode: pinCode,
+        ownerName: ownerName,
+        adminEmail: adminForm.adminEmail || user.email,
+        contactNumber: adminForm.phone || 'N/A',
+        licenseNumber: 'TEMP-' + Date.now(),
+        location: locationForm.location,
+      };
+
+      const response = await setupStore(payload);
+      if (response.success) {
+        setActiveStep(3);
+        setTemporaryNotice('Location saved. Proceed to admin verification.');
+      }
+    } catch (error) {
+      setTemporaryNotice('Error saving location. Please try again.');
+      console.error('Save location error:', error);
+    }
   };
 
   const onSendOtp = () => {
@@ -109,7 +214,7 @@ export default function StoreSetupPage() {
     setTemporaryNotice('OTP sent successfully. Use 123456 for demo.');
   };
 
-  const onVerifyOtp = () => {
+  const onVerifyOtp = async () => {
     if (!adminForm.otpSent) {
       setTemporaryNotice('Send OTP first.');
       return;
@@ -120,20 +225,28 @@ export default function StoreSetupPage() {
       return;
     }
 
-    setAdminForm((prev) => ({ ...prev, verified: true }));
-    setActiveStep(4);
-    setTemporaryNotice('Admin verification complete.');
+    try {
+      const payload = {
+        adminEmail: adminForm.adminEmail || user.email,
+        isVerified: true,
+        contactNumber: adminForm.phone,
+      };
+      
+      const response = await setupStore(payload);
+      if (response.success) {
+        setAdminForm((prev) => ({ ...prev, verified: true }));
+        setActiveStep(4);
+        setTemporaryNotice('Admin verification complete.');
+      }
+    } catch (error) {
+      setTemporaryNotice('Error saving verification. Please try again.');
+      console.error('Verify OTP error:', error);
+    }
   };
 
-  const onSaveStorePreferences = () => {
+  const onSaveStorePreferences = async () => {
     if (!adminForm.verified) {
       setTemporaryNotice('Complete admin verification first.');
-      return;
-    }
-
-    if (!uploadedFile) {
-      setActiveStep(1);
-      setTemporaryNotice('License upload is pending.');
       return;
     }
 
@@ -148,8 +261,33 @@ export default function StoreSetupPage() {
       return;
     }
 
-    setIsSetupCompleted(true);
-    setTemporaryNotice('Store setup completed successfully.');
+    try {
+      const payload = {
+        name: locationForm.storeName,
+        address: locationForm.address,
+        city: locationForm.city,
+        pinCode: locationForm.pinCode,
+        contactNumber: adminForm.phone,
+        ownerName: locationForm.ownerName,
+        adminEmail: adminForm.adminEmail,
+        licenseNumber: 'TEMP-' + Date.now(),
+        openTime: storeForm.openTime,
+        closeTime: storeForm.closeTime,
+        acceptsOnlineOrders: storeForm.acceptsOnlineOrders,
+        location: locationForm.location,
+        status: 'active',
+        isVerified: true
+      };
+
+      const response = await setupStore(payload);
+      if (response.success) {
+        setIsSetupCompleted(true);
+        setTemporaryNotice('Store setup completed and saved successfully.');
+      }
+    } catch (error) {
+      setTemporaryNotice('Error saving store setup. Please try again.');
+      console.error('Save error:', error);
+    }
   };
 
   const onResetAll = () => {
@@ -180,32 +318,7 @@ export default function StoreSetupPage() {
 
   return (
     <div className="dashboard-page inventory-theme">
-      <aside className="dashboard-sidebar">
-        <div className="brand-block">
-          <div className="brand-title">MedStore</div>
-          <div className="brand-subtitle">Admin Panel</div>
-        </div>
-
-        <nav className="dashboard-nav">
-          <NavLink className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} to="/store/dashboard">Dashboard</NavLink>
-          <NavLink className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} to="/store/inventory">
-            Inventory
-            <span className="pill-count">23</span>
-          </NavLink>
-          <NavLink className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} to="/store/store-setup">Store Setup</NavLink>
-          <NavLink className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} to="/store/orders">Orders</NavLink>
-          <NavLink className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} to="/store/taxes">Tax Settings</NavLink>
-        </nav>
-
-        <div className="sidebar-section">Quick Actions</div>
-        <div className="quick-links">
-          <button className="quick-link" type="button" onClick={() => navigate('/store/inventory')}>Search Medicines</button>
-          <button className="quick-link" type="button" onClick={() => setActiveStep(1)}>Settings</button>
-          <button className="quick-link" type="button" onClick={() => setTemporaryNotice('Support request drafted successfully.')}>Help & Support</button>
-        </div>
-
-        <button className="help-card" type="button" onClick={() => navigate('/store')}>Switch Store</button>
-      </aside>
+      <Sidebar setNotice={setTemporaryNotice} />
 
       <main className="dashboard-main">
         <header className="topbar">
@@ -289,6 +402,18 @@ export default function StoreSetupPage() {
               <input placeholder="City" value={locationForm.city} onChange={(event) => setLocationForm((prev) => ({ ...prev, city: event.target.value }))} />
               <input placeholder="Pin Code" value={locationForm.pinCode} onChange={(event) => setLocationForm((prev) => ({ ...prev, pinCode: event.target.value }))} />
               <input className="span-two" placeholder="Store Address" value={locationForm.address} onChange={(event) => setLocationForm((prev) => ({ ...prev, address: event.target.value }))} />
+              
+              <div className="span-two location-detect-row">
+                <button type="button" className="action-btn secondary" onClick={onDetectLocation}>
+                  <MapPin size={16} /> Detect My Location
+                </button>
+                {locationForm.location?.coordinates && (
+                  <span className="location-status">
+                    Coordinates captured: {locationForm.location.coordinates[1]?.toFixed(4)}, {locationForm.location.coordinates[0]?.toFixed(4)}
+                  </span>
+                )}
+              </div>
+
               <div className="header-actions span-two">
                 <button type="button" className="action-btn secondary" onClick={() => setActiveStep(1)}>Back</button>
                 <button type="button" className="action-btn primary" onClick={onSaveLocation}>Save & Continue</button>

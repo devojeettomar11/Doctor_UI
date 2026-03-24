@@ -1,11 +1,9 @@
 import React, { useMemo, useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Info, Percent, IndianRupee, Plus, Save, Trash2 } from 'lucide-react';
+import Sidebar from '../components/Sidebar';
 
-const seedTaxes = [
-  { id: 't1', name: 'service tax', mode: 'fixed', value: '10' },
-  { id: 't2', name: 'erty', mode: 'percentage', value: '0' },
-];
+const seedTaxes = [];
 
 export default function TaxSettingsPage() {
   const navigate = useNavigate();
@@ -38,32 +36,7 @@ export default function TaxSettingsPage() {
 
   return (
     <div className="dashboard-page inventory-theme">
-      <aside className="dashboard-sidebar">
-        <div className="brand-block">
-          <div className="brand-title">MedStore</div>
-          <div className="brand-subtitle">Admin Panel</div>
-        </div>
-
-        <nav className="dashboard-nav">
-          <NavLink className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} to="/store/dashboard">Dashboard</NavLink>
-          <NavLink className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} to="/store/inventory">
-            Inventory
-            <span className="pill-count">23</span>
-          </NavLink>
-          <NavLink className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} to="/store/store-setup">Store Setup</NavLink>
-          <NavLink className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} to="/store/orders">Orders</NavLink>
-          <NavLink className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} to="/store/taxes">Tax Settings</NavLink>
-        </nav>
-
-        <div className="sidebar-section">Quick Actions</div>
-        <div className="quick-links">
-          <button className="quick-link" type="button" onClick={() => navigate('/store/inventory')}>Search Medicines</button>
-          <button className="quick-link" type="button" onClick={() => navigate('/store/store-setup')}>Store Setup</button>
-          <button className="quick-link" type="button" onClick={() => setTemporaryNotice('Support request drafted successfully.')}>Help & Support</button>
-        </div>
-
-        <button className="help-card" type="button" onClick={() => navigate('/store')}>Switch Store</button>
-      </aside>
+      <Sidebar setNotice={setTemporaryNotice} />
 
       <main className="dashboard-main">
         {notice ? <div className="toast-msg">{notice}</div> : null}
@@ -148,7 +121,7 @@ export default function TaxSettingsPage() {
                         setTaxes((prev) => prev.map((row) => (row.id === tax.id ? { ...row, value: nextValue } : row)));
                       }}
                     />
-                    <span className="tax-value-unit">{tax.mode === 'fixed' ? 'Rs' : '%'}</span>
+                    <span className="tax-value-unit">{tax.mode === 'fixed' ? '₹' : '%'}</span>
                   </div>
                 </div>
 
