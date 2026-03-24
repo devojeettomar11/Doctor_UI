@@ -64,9 +64,9 @@
     height: auto;
   }
 
-  #home {
+  /* #home {
     margin-top: 70px;
-  }
+  } */
 
   .opening-card {
     background: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%);
@@ -101,6 +101,15 @@
 
   .opening-card a:hover {
     background: rgba(255, 255, 255, 0.3);
+  }
+
+  /* Utility to hide search bar */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 }
 

@@ -18,13 +18,17 @@ import LabTests from '@/shared/pages/LabTests';
 import OrderTracking from '@/shared/pages/OrderTracking';
 import MedicineReminder from '@/shared/pages/MedicineReminder';
 import EmergencySupport from '@/shared/pages/EmergencySupport';
+import PrivacyPolicy from '@/shared/pages/PrivacyPolicy';
+import TermsOfService from '@/shared/pages/TermsOfService';
+import CookiePolicy from '@/shared/pages/CookiePolicy';
+import RefundPolicy from '@/shared/pages/RefundPolicy';
 
 const appRoutes = () => {
   return (
     <Routes>
       {/* Public Marketing Routes */}
       <Route element={<ModernLayout />}>
-        <Route path="/home" element={<Home />} />
+        <Route path="/" element={<Home />} />
         <Route path="/about" element={<About />} />
         <Route path="/services" element={<Services />} />
         <Route path="/careers" element={<Careers />} />
@@ -34,6 +38,10 @@ const appRoutes = () => {
         <Route path="/order-tracking" element={<OrderTracking />} />
         <Route path="/medicine-reminder" element={<MedicineReminder />} />
         <Route path="/emergency-support" element={<EmergencySupport />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/terms-of-service" element={<TermsOfService />} />
+        <Route path="/cookie-policy" element={<CookiePolicy />} />
+        <Route path="/refund-policy" element={<RefundPolicy />} />
       </Route>
 
       {/* Auth Routes (Public) */}
@@ -43,7 +51,7 @@ const appRoutes = () => {
       {/* App Routes (Protected & Layout Wrapped) */}
       <Route element={<ProtectedRoute />}>
         <Route element={<MainLayout />}>
-          <Route path="/" element={<DashboardPage />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/doctors" element={<DoctorListPage />} />
           {/* Add more protected routes here */}
         </Route>
