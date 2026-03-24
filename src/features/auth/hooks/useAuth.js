@@ -14,7 +14,7 @@ export const useAuth = () => {
       const response = await authApi.login(credentials);
       if (response.success) {
         setAuth(response.data.user, response.data.token);
-        return { success: true };
+        return { success: true, user: response.data.user };
       }
     } catch (err) {
       const message = err.response?.data?.message || 'Login failed. Please check your credentials.';
@@ -32,7 +32,7 @@ export const useAuth = () => {
       const response = await authApi.register(userData);
       if (response.success) {
         setAuth(response.data.user, response.data.token);
-        return { success: true };
+        return { success: true, user: response.data.user };
       }
     } catch (err) {
       const message = err.response?.data?.message || 'Registration failed. Please try again.';

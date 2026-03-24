@@ -19,7 +19,12 @@ export default {
           secondary: '#0f172a',
           surface: '#ffffff',
           body: '#475569'
-        }
+        },
+        // Store theme variables defined in index.css
+        primary: 'var(--primary)',
+        secondary: 'var(--secondary)',
+        background: 'var(--background)',
+        text: 'var(--text)',
       },
       borderRadius: {
         '2xl': '1rem',

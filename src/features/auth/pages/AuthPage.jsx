@@ -51,7 +51,8 @@ const AuthPage = () => {
       
       if (result.success) {
         setStatus({ type: 'success', message: 'Logged in successfully!' });
-        setTimeout(() => navigate('/'), 1500);
+        const redirectPath = result.user?.role === 'store_admin' ? '/store' : '/';
+        setTimeout(() => navigate(redirectPath), 1500);
       } else {
         setStatus({ type: 'error', message: result.message });
       }
@@ -60,7 +61,8 @@ const AuthPage = () => {
       
       if (result.success) {
         setStatus({ type: 'success', message: 'Account created successfully!' });
-        setTimeout(() => navigate('/'), 1500);
+        const redirectPath = result.user?.role === 'store_admin' ? '/store' : '/';
+        setTimeout(() => navigate(redirectPath), 1500);
       } else {
         setStatus({ type: 'error', message: result.message });
       }
@@ -71,8 +73,7 @@ const AuthPage = () => {
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
       <div className="max-w-4xl w-full bg-white rounded-3xl shadow-xl overflow-hidden flex flex-col md:flex-row">
 
-        {/* Left Side: Illustration / Branding Area */}
-        <div className="md:w-5/12 bg-linear-to-br from-teal-trustworthy-main to-teal-trustworthy-darker p-10 flex flex-col justify-between text-white hidden md:flex">
+        <div className="hidden md:flex md:w-5/12 bg-linear-to-br from-teal-trustworthy-main to-teal-trustworthy-darker p-10 flex-col justify-between text-white">
           <div>
             <div className="flex items-center gap-2 mb-8">
               <ShieldCheck size={32} className="text-teal-trustworthy-lighter" />

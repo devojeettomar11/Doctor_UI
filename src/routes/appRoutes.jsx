@@ -7,7 +7,7 @@ import DoctorListPage from '@/features/doctor/pages/doctorListPage';
 import AuthPage from '@/features/auth/pages/AuthPage';
 import ProtectedRoute from './ProtectedRoute';
 
-// New Shared Pages
+// Marketing Pages
 import Home from '@/shared/pages/Home';
 import About from '@/shared/pages/About';
 import Services from '@/shared/pages/Services';
@@ -23,7 +23,16 @@ import TermsOfService from '@/shared/pages/TermsOfService';
 import CookiePolicy from '@/shared/pages/CookiePolicy';
 import RefundPolicy from '@/shared/pages/RefundPolicy';
 
-const appRoutes = () => {
+// Medical Store Pages
+import StoreDashboardPage from '../features/medicalStore/pages/Dashboard';
+import InventoryPage from '../features/medicalStore/pages/inventory';
+import StoreSetupPage from '../features/medicalStore/pages/storeSetup';
+import StoreSelectorPage from '../features/medicalStore/pages/storeSelector';
+import TaxSettingsPage from '../features/medicalStore/pages/taxSettings';
+import OrdersPage from '../features/medicalStore/pages/orders';
+import OrderAuditPage from '../features/medicalStore/pages/orderAudit';
+
+const AppRoutes = () => {
   return (
     <Routes>
       {/* Public Marketing Routes */}
@@ -53,8 +62,18 @@ const appRoutes = () => {
         <Route element={<MainLayout />}>
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/doctors" element={<DoctorListPage />} />
-          {/* Add more protected routes here */}
         </Route>
+      </Route>
+
+      {/* Medical Store Routes (Scoped) */}
+      <Route path="/store">
+        <Route index element={<StoreSelectorPage />} />
+        <Route path="dashboard" element={<StoreDashboardPage />} />
+        <Route path="inventory" element={<InventoryPage />} />
+        <Route path="store-setup" element={<StoreSetupPage />} />
+        <Route path="orders" element={<OrdersPage />} />
+        <Route path="orders/:orderId/audit" element={<OrderAuditPage />} />
+        <Route path="taxes" element={<TaxSettingsPage />} />
       </Route>
 
       {/* Fallback */}
@@ -63,5 +82,4 @@ const appRoutes = () => {
   );
 };
 
-export default appRoutes;
-
+export default AppRoutes;
