@@ -1,1 +1,1 @@
-﻿export const ADMIN_TYPES = {};
+﻿
