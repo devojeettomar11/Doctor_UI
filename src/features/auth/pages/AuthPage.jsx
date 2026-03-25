@@ -51,7 +51,10 @@ const AuthPage = () => {
       
       if (result.success) {
         setStatus({ type: 'success', message: 'Logged in successfully!' });
-        const redirectPath = result.user?.role === 'store_admin' ? '/store' : '/';
+        let redirectPath = '/';
+        if (result.user?.role === 'store_admin') redirectPath = '/store/dashboard';
+        else if (result.user?.role === 'doctor') redirectPath = '/doctor/dashboard';
+        
         setTimeout(() => navigate(redirectPath), 1500);
       } else {
         setStatus({ type: 'error', message: result.message });
@@ -61,7 +64,10 @@ const AuthPage = () => {
       
       if (result.success) {
         setStatus({ type: 'success', message: 'Account created successfully!' });
-        const redirectPath = result.user?.role === 'store_admin' ? '/store' : '/';
+        let redirectPath = '/';
+        if (result.user?.role === 'store_admin') redirectPath = '/store/dashboard';
+        else if (result.user?.role === 'doctor') redirectPath = '/doctor/dashboard';
+        
         setTimeout(() => navigate(redirectPath), 1500);
       } else {
         setStatus({ type: 'error', message: result.message });
