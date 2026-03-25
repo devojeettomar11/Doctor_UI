@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, ChevronDown, LogIn, UserPlus, LogOut, LayoutDashboard } from 'lucide-react';
-import useAuthStore from '@/store/authStore';
+import { useAuthStore } from '@/store';
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);

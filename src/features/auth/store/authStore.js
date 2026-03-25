@@ -20,6 +20,21 @@ const useAuthStore = create(
         set({ user: null, token: null, isAuthenticated: false, error: null });
       },
 
+      // Aliases and additional methods for consolidation
+      login: (user, token) => {
+        localStorage.setItem('token', token);
+        set({ user, token, isAuthenticated: true, error: null });
+      },
+
+      logout: () => {
+        localStorage.removeItem('token');
+        set({ user: null, token: null, isAuthenticated: false, error: null });
+      },
+
+      updateUser: (updates) => set((state) => ({
+        user: state.user ? { ...state.user, ...updates } : null,
+      })),
+
       setError: (error) => set({ error }),
       setLoading: (loading) => set({ loading }),
     }),
