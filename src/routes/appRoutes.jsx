@@ -5,6 +5,7 @@ import ModernLayout from '@/layouts/ModernLayout';
 import DashboardPage from '@/features/auth/pages/dashboardPage';
 import DoctorListPage from '@/features/doctor/pages/DoctorListPage';
 import AuthPage from '@/features/auth/pages/AuthPage';
+import VerifyEmailPage from '@/features/auth/pages/VerifyEmailPage';
 import ProtectedRoute from './ProtectedRoute';
 
 // Marketing Pages
@@ -65,6 +66,7 @@ const AppRoutes = () => {
       {/* Auth Routes (Public) */}
       <Route path="/login" element={<AuthPage />} />
       <Route path="/register" element={<AuthPage />} />
+      <Route path="/verify-email/:token" element={<VerifyEmailPage />} />
 
       {/* App Routes (Protected & Layout Wrapped) */}
       <Route element={<ProtectedRoute />}>

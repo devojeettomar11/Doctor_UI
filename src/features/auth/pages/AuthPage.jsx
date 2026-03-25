@@ -28,15 +28,20 @@ const AuthPage = () => {
     email: '',
     phone: '',
     password: '',
-    role: 'patient',
+    role: 'store_admin',
+    license: null,
   });
   const [status, setStatus] = useState({ type: '', message: '' });
-  
+
   const { login, register, loading } = useAuth();
   const navigate = useNavigate();
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleFileChange = (e) => {
+    setFormData({ ...formData, license: e.target.files[0] });
   };
 
   const handleSubmit = async (e) => {
@@ -48,26 +53,34 @@ const AuthPage = () => {
         email: formData.email,
         password: formData.password
       });
-      
+
       if (result.success) {
         setStatus({ type: 'success', message: 'Logged in successfully!' });
         let redirectPath = '/';
         if (result.user?.role === 'store_admin') redirectPath = '/store/dashboard';
         else if (result.user?.role === 'doctor') redirectPath = '/doctor/dashboard';
-        
+
         setTimeout(() => navigate(redirectPath), 1500);
       } else {
         setStatus({ type: 'error', message: result.message });
       }
     } else {
-      const result = await register(formData);
-      
+      // For registration, we use FormData to support license file upload
+      const data = new FormData();
+      Object.keys(formData).forEach(key => {
+        if (formData[key] !== null) {
+          data.append(key, formData[key]);
+        }
+      });
+
+      const result = await register(data);
+
       if (result.success) {
-        setStatus({ type: 'success', message: 'Account created successfully!' });
+        setStatus({ type: 'success', message: 'Account created successfully! Please check your email for verification.' });
         let redirectPath = '/';
         if (result.user?.role === 'store_admin') redirectPath = '/store/dashboard';
         else if (result.user?.role === 'doctor') redirectPath = '/doctor/dashboard';
-        
+
         setTimeout(() => navigate(redirectPath), 1500);
       } else {
         setStatus({ type: 'error', message: result.message });
@@ -126,9 +139,8 @@ const AuthPage = () => {
           </div>
 
           {status.message && (
-            <div className={`mb-6 p-4 rounded-2xl text-sm font-medium ${
-              status.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-rose-50 text-rose-700 border border-rose-100'
-            }`}>
+            <div className={`mb-6 p-4 rounded-2xl text-sm font-medium ${status.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-rose-50 text-rose-700 border border-rose-100'
+              }`}>
               {status.message}
             </div>
           )}
@@ -155,14 +167,35 @@ const AuthPage = () => {
                   onChange={handleChange}
                   className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-trustworthy-main appearance-none transition-all duration-300"
                 >
-                  <option value="patient">Patient</option>
+
                   <option value="doctor">Doctor</option>
                   <option value="clinic_admin">Clinic Admin</option>
                   <option value="store_admin">Store Admin</option>
-                  <option value="admin">System Admin</option>
+
                 </select>
                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
+              </div>
+            )}
+
+            {!isLogin && (
+              <div className="mb-4">
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 ml-1">
+                  Professional License (PDF/Image)
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                    <ShieldCheck size={20} />
+                  </div>
+                  <input
+                    type="file"
+                    name="license"
+                    onChange={handleFileChange}
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-trustworthy-main transition-all duration-300 file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100"
+                    required={(formData.role === 'doctor' || formData.role === 'store_admin')}
+                  />
                 </div>
               </div>
             )}
