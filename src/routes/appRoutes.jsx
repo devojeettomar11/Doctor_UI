@@ -3,7 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import MainLayout from '@/layouts/mainLayout';
 import ModernLayout from '@/layouts/ModernLayout';
 import DashboardPage from '@/features/auth/pages/dashboardPage';
-import DoctorListPage from '@/features/doctor/pages/doctorListPage';
+import DoctorListPage from '@/features/doctor/pages/DoctorListPage';
 import AuthPage from '@/features/auth/pages/AuthPage';
 import ProtectedRoute from './ProtectedRoute';
 

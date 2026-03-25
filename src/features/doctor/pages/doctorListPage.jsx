@@ -1,13 +1,13 @@
 import React from 'react';
-import doctorList from '../components/doctorList';
+import DoctorList from '../components/DoctorList';
 
-const doctorListPage = () => {
+const DoctorListPage = () => {
   return (
     <div className="doctor-list-page">
       <h1>Available Doctors</h1>
-      <doctorList />
+      <DoctorList />
     </div>
   );
 };
 
-export default doctorListPage;
+export default DoctorListPage;
