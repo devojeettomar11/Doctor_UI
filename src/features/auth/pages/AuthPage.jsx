@@ -81,8 +81,8 @@ const AuthPage = () => {
 
         <div className="hidden md:flex md:w-5/12 bg-linear-to-br from-teal-trustworthy-main to-teal-trustworthy-darker p-10 flex-col justify-between text-white">
           <div>
-            <div className="flex items-center gap-2 mb-8">
-              <ShieldCheck size={32} className="text-teal-trustworthy-lighter" />
+            <div className="flex items-center gap-3 mb-8">
+              <img src="/images/logo.jpg" alt="Logo" className="w-10 h-10 rounded-xl shadow-md border border-white/20" />
               <h1 className="text-2xl font-bold tracking-tight">MediGhar</h1>
             </div>
             <h2 className="text-3xl font-bold mb-4 leading-tight">
@@ -111,8 +111,9 @@ const AuthPage = () => {
 
         {/* Right Side: Form Area */}
         <div className="md:w-7/12 p-8 md:p-12 flex flex-col justify-center bg-white relative">
-          <div className="absolute top-8 right-8 text-sm md:hidden">
-            <span className="font-bold text-teal-trustworthy-darker">MediGhar</span>
+          <div className="absolute top-8 left-8 flex items-center gap-2 md:hidden">
+            <img src="/images/logo.jpg" alt="Logo" className="w-8 h-8 rounded-lg shadow-sm" />
+            <span className="font-bold text-slate-900">MediGhar</span>
           </div>
 
           <div className="mb-8">

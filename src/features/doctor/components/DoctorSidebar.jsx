@@ -13,9 +13,12 @@ const navItems = [
 const DoctorSidebar = () => {
   return (
     <aside className="w-56 min-h-screen bg-white border-r border-gray-200 flex flex-col">
-      <div className="p-4 border-b border-gray-200">
-        <h2 className="text-base font-semibold text-gray-900">MediGhar</h2>
-        <p className="text-xs text-gray-500 mt-0.5">Doctor Portal</p>
+      <div className="p-4 border-b border-gray-200 flex items-center gap-3">
+        <img src="/images/logo.jpg" alt="Logo" className="w-8 h-8 rounded-lg shadow-sm" />
+        <div>
+          <h2 className="text-sm font-bold text-gray-900 leading-none">MediGhar</h2>
+          <p className="text-[10px] text-gray-500 mt-0.5">Doctor Portal</p>
+        </div>
       </div>
 
       <nav className="flex-1 py-2">

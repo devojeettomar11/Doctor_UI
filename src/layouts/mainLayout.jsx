@@ -11,7 +11,10 @@ const mainLayout = () => {
   return (
     <div className="flex flex-col min-h-screen">
       <header className="bg-white border-b px-6 py-4 flex items-center justify-between">
-        <Link to="/" className="text-xl font-bold text-teal-600">MediGhar</Link>
+        <Link to="/" className="flex items-center gap-2">
+          <img src="/images/logo.jpg" alt="Logo" className="h-8 w-auto rounded-lg shadow-sm" />
+          <span className="text-lg font-bold text-teal-600">MediGhar</span>
+        </Link>
         <nav className="flex gap-6 items-center">
           <Link to="/doctors" className="hover:text-teal-600 font-medium">Doctors</Link>
           <Link to="/appointments" className="hover:text-teal-600 font-medium">Appointments</Link>
