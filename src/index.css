@@ -1,13 +1,27 @@
 @import "tailwindcss";
 
+@theme {
+  --color-blue-50: #e0f7fa;
+  --color-blue-100: #b2ebf2;
+  --color-blue-200: #80deea;
+  --color-blue-300: #4dd0e1;
+  --color-blue-400: #26c6da;
+  --color-blue-500: #00bcd4;
+  --color-blue-600: #26c6da; /* Exact requested color for main elements */
+  --color-blue-700: #00acc1;
+  --color-blue-800: #0097a7;
+  --color-blue-900: #00838f;
+  --color-blue-950: #006064;
+}
+
 :root {
-  --primary: #2563eb;
+  --primary: #26c6da;
   --secondary: #64748b;
   --background: #f8fafc;
   --text: #0f172a;
 }
 
-* {
+/* * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
@@ -22,4 +36,4 @@ body {
 
 .app {
   min-height: 100vh;
-}
+} */

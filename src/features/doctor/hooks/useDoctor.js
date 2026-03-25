@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getDoctors } from '../api/doctorApi';
+import { getDoctors, getDoctorProfile } from '../api/doctorApi';
 
 export const useDoctor = () => {
   const [doctors, setDoctors] = useState([]);
@@ -23,4 +23,28 @@ export const useDoctor = () => {
   }, []);
 
   return { doctors, loading, error, refetch: fetchDoctors };
+};
+
+export const useDoctorProfile = () => {
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const fetchProfile = async () => {
+    setLoading(true);
+    try {
+      const response = await getDoctorProfile();
+      setProfile(response.data.data);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  return { profile, loading, error, refetch: fetchProfile };
 };
