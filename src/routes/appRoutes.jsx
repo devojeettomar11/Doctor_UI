@@ -1,17 +1,7 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 
-// Main Layout
-import MainLayout from '@/layouts/mainLayout';
-
-// Auth Pages
-import DashboardPage from '@/features/auth/pages/dashboardPage';
-import LoginPage from '@/features/auth/pages/loginPage';
-
-// Doctor List
-import DoctorListPage from '@/features/doctor/pages/doctorListPage';
-
-// Doctor Feature Pages
+// Doctor Layout + Pages
 import DoctorLayout from '@/features/doctor/pages/doctorLayout';
 import DoctorDashboardPage from '@/features/doctor/pages/doctorDashboardPage';
 import AppointmentsPage from '@/features/doctor/pages/appointmentsPage';
@@ -24,17 +14,13 @@ const AppRoutes = () => {
   return (
     <Routes>
 
-      {/* 🌐 Main Website Routes */}
-      <Route path="/" element={<MainLayout />}>
-        <Route index element={<DashboardPage />} />
-        <Route path="doctors" element={<DoctorListPage />} />
-        <Route path="login" element={<LoginPage />} />
-      </Route>
+      {/* 🔥 MAIN CHANGE */}
+      <Route path="/" element={<Navigate to="/doctor" replace />} />
 
-      {/* 🏥 Doctor Portal Routes */}
+      {/* Doctor Portal */}
       <Route path="/doctor" element={<DoctorLayout />}>
 
-        {/* 🔥 DEFAULT → Redirect to dashboard */}
+        {/* default */}
         <Route index element={<Navigate to="dashboard" replace />} />
 
         <Route path="dashboard" element={<DoctorDashboardPage />} />
@@ -43,11 +29,7 @@ const AppRoutes = () => {
         <Route path="earnings" element={<EarningsPage />} />
         <Route path="patients" element={<PatientsPage />} />
         <Route path="onboarding" element={<OnboardingPage />} />
-
       </Route>
-
-      {/* ❌ Fallback Route */}
-      <Route path="*" element={<Navigate to="/" replace />} />
 
     </Routes>
   );
